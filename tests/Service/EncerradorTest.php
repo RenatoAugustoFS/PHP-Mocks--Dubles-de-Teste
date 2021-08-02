@@ -7,35 +7,6 @@ use Alura\Leilao\Model\Leilao;
 use Alura\Leilao\Service\Encerrador;
 use PHPUnit\Framework\TestCase;
 
-class LeilaoDaoMock extends LeilaoDao
-{
-    private $leiloes = [];
-
-    public function salva(Leilao $leilao): void
-    {
-        $this->leiloes[] = $leilao;
-    }
-
-    public function recuperarNaoFinalizados(): array
-    {
-        return array_filter($this->leiloes, function (Leilao $leilao) {
-            return !$leilao->estaFinalizado();
-        });
-    }
-
-    public function recuperarFinalizados(): array
-    {
-        return array_filter($this->leiloes, function (Leilao $leilao) {
-            return $leilao->estaFinalizado();
-        });
-    }
-
-    public function atualiza(Leilao $leilao)
-    {
-
-    }
-}
-
 class EncerradorTest extends TestCase
 {
     public function testLeiloesComMaisDeUmaSemanaDevemSerEncerrados()
@@ -50,9 +21,9 @@ class EncerradorTest extends TestCase
             new \DateTimeImmutable('10 days ago')
         );
 
-        $leilaoDao = new LeilaoDaoMock();
-        $leilaoDao->salva($hornet);
-        $leilaoDao->salva($cbmil);
+        $leilaoDao = $this->createMock(LeilaoDao::class);
+        $leilaoDao->method('recuperarNaoFinalizados')->willReturn([$hornet, $cbmil]);
+        $leilaoDao->method('recuperarFinalizados')->willReturn([$hornet, $cbmil]);
 
         $encerrador = new Encerrador($leilaoDao);
         $encerrador->encerra();
@@ -60,7 +31,7 @@ class EncerradorTest extends TestCase
         $leiloes = $leilaoDao->recuperarFinalizados();
 
         self::assertCount(2, $leiloes);
-        self::assertEquals($leiloes[0]->recuperarDescricao(), 'Hornet');
-        self::assertEquals($leiloes[1]->recuperarDescricao(), 'cbmil');
+        self::assertTrue($leiloes[0]->estaFinalizado());
+        self::assertTrue($leiloes[1]->estaFinalizado());
     }
 }
