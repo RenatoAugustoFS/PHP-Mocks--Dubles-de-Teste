@@ -106,9 +106,9 @@ class AvaliadorTest extends TestCase
     public function leilaoComLancesEmOrdemAleatoria()
     {
         $leilao = new Leilao('Fiat 147 0KM');
-        $joao = new Usuario('João');
-        $maria = new Usuario('Maria');
-        $ana = new Usuario('Ana');
+        $joao = $this->getMockBuilder(Usuario::class)->setConstructorArgs(['joão'])->getMock();
+        $maria = $this->getMockBuilder(Usuario::class)->setConstructorArgs(['maria'])->getMock();
+        $ana = $this->getMockBuilder(Usuario::class)->setConstructorArgs(['ana'])->getMock();
 
         $leilao->recebeLance(new Lance($maria, 1500));
         $leilao->recebeLance(new Lance($ana, 2000));
