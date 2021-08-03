@@ -18,24 +18,15 @@ class EncerradorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->hornet = new Leilao(
-            'Hornet',
-            new \DateTimeImmutable('8 days ago')
-        );
-
-        $this->cbmil = new Leilao(
-            'cbmil',
-            new \DateTimeImmutable('10 days ago')
-        );
+        $this->hornet = new Leilao('Hornet', new \DateTimeImmutable('8 days ago'));
+        $this->cbmil = new Leilao('cbmil', new \DateTimeImmutable('10 days ago'));
 
         //$this->leilaoDao = $this->createMock(LeilaoDao::class);
         $this->leilaoDao = $this->getMockBuilder(LeilaoDao::class)
             ->setConstructorArgs([new \PDO('sqlite::memory:')])
             ->getMock();
-
         $this->leilaoDao->method('recuperarNaoFinalizados')->willReturn([$this->hornet, $this->cbmil]);
         $this->leilaoDao->method('recuperarFinalizados')->willReturn([$this->hornet, $this->cbmil]);
-
         $this->leilaoDao
             ->expects($this->exactly(2))
             ->method('atualiza')
@@ -45,7 +36,6 @@ class EncerradorTest extends TestCase
             );
 
         $this->enviadorEmail = $this->createMock(EnviadorEmail::class);
-        $this->enviadorEmail->method('notificarTerminoLeilao')->willReturn(false);
 
         $this->encerrador = new Encerrador($this->leilaoDao, $this->enviadorEmail);
     }
@@ -69,5 +59,16 @@ class EncerradorTest extends TestCase
                 ->willThrowException($error);
 
             $this->encerrador->encerra();
+    }
+
+    public function testSoDeveEnviarLeilaoPorEmailAposFinalizado()
+    {
+        $this->enviadorEmail
+            ->expects($this->exactly(2))
+            ->method('notificarTerminoLeilao')->willReturnCallback(function (Leilao $leilao){
+                self::assertTrue($leilao->estaFinalizado());
+            });
+
+        $this->encerrador->encerra();
     }
 }
